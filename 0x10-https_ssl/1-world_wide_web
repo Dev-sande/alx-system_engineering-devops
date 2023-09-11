@@ -1,16 +1,16 @@
-#!/usr/bin/env bash 
-# Display information about subdomains.
+#!/usr/bin/env bash
+# configure my domain zone so that the subdomain www points to load balancer
 
-subdomaininfo () {
-    dig "$1" | grep -A1 'ANSWER SECTION:' | tail -n 1 | sed -r "s/$1./$2/g" | sed -r "s/ /\t/g" | sed -r "s/\t/ /g" | awk '{ print "The subdomain " $1 " is a " $4 " record and points to "  $5 }'
+func()
+{
+    if [ $# -eq 2 ]; then
+	dig "$2.$1" | grep -A1 'ANSWER SECTION:' | tail -n 1 | awk '{split($1, spl, ".")} {printf "The subdomain %s is a %s record and points to %s\n",spl[1],$4,$5}'
+    elif [ $# -eq 1 ]; then
+	for sub in 'www' 'lb-01' 'web-01' 'web-02'; do
+	    fdqn=$sub.$1
+	    dig "$fdqn" | grep -A1 'ANSWER SECTION:' | tail -n 1 | awk '{split($1, spl, ".")} {printf "The subdomain %s is a %s record and points to %s\n",spl[1],$4,$5}'
+	done
+    fi
 }
 
-if [ "$#" -eq 2 ]
-then
-    subdomaininfo "$2.$1" "$2"
-else
-    subdomaininfo "www.$1" "www"
-    subdomaininfo "lb-01.$1" "lb-01"
-    subdomaininfo "web-01.$1" "web-01"
-    subdomaininfo "web-02.$1" "web-02"
-fi
+func "$@"
